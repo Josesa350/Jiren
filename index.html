@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASPIRE RESTAURANT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --accent: #e6b800; --bg: #0a0a0a; --card: rgba(20, 20, 20, 0.9); --text: #f5f5f5; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { 
+            font-family: 'Montserrat', sans-serif; background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1000');
+            background-size: cover; background-attachment: fixed; color: var(--text); min-height: 100vh;
+        }
+        header { text-align: center; padding: 40px 20px; }
+        header h1 { font-family: 'Playfair Display', serif; font-size: 32px; color: #fff; letter-spacing: 2px; }
+        .menu-container { max-width: 800px; margin: 0 auto; padding: 20px 20px 100px; }
+        .category-card { background: var(--card); border-radius: 15px; padding: 20px; margin-bottom: 20px; border-left: 4px solid var(--accent); cursor: pointer; transition: 0.3s; }
+        .category-title { color: var(--accent); font-size: 22px; display: flex; justify-content: space-between; align-items: center; }
+        .items-list { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out; margin-top: 0; }
+        .items-list.active { max-height: 2000px; margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; }
+        .menu-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #444; }
+        
+        /* Floating Buttons */
+        .admin-trigger { position: fixed; bottom: 20px; right: 20px; background: var(--accent); color: #000; border: none; padding: 15px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 999; }
+        .back-to-top { position: fixed; bottom: 20px; left: 20px; background: var(--accent); color: #000; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 24px; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        
+        /* Admin Panel */
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+        .admin-box { background: #1a1a1a; width: 100%; max-width: 500px; border-radius: 20px; padding: 30px; height: 85vh; overflow-y: auto; position: relative; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; background: #2a2a2a; border: 1px solid #444; color: #fff; border-radius: 8px; font-size: 16px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        .btn-primary { background: var(--accent); color: #000; }
+        .btn-danger { background: #cc0000; color: #fff; }
+        .btn-close { background: #444; color: #fff; }
+        .edit-item-row { background: #222; padding: 12px; margin: 10px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .admin-scroll-top { background: var(--accent); color: #000; width: 40px; height: 40px; border-radius: 50%; border: none; position: sticky; bottom: 0; float: right; cursor: pointer; font-weight: bold; font-size: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+        footer { text-align: center; padding: 20px; color: #777; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<header id="top-anchor"><h1>ASPIRE RESTAURANT</h1></header>
+<div class="menu-container" id="menuDisplay"></div>
+
+<button class="back-to-top" id="btnTop" onclick="window.scrollTo(0,0)">↑</button>
+<button class="admin-trigger" onclick="toggleAdminPanel(true)">ADMIN</button>
+
+<div class="overlay" id="adminOverlay">
+    <div class="admin-box" id="adminContainer">
+        <div id="loginSection">
+            <h2 style="margin-bottom:20px; color:var(--accent)">Admin Login</h2>
+            <input type="password" id="passInput" placeholder="Password">
+            <button class="btn btn-primary" onclick="handleLogin()">Login</button>
+            <button class="btn btn-close" onclick="toggleAdminPanel(false)">Close</button>
+        </div>
+
+        <div id="dashSection" style="display:none">
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+                <button class="btn btn-close" onclick="changePassword()">Key</button>
+                <button class="btn btn-close" onclick="toggleAdminPanel(false)">Close</button>
+                <button class="btn btn-danger" onclick="handleLogout()">Logout</button>
+            </div>
+
+            <h3 style="color:var(--accent)">Add Category</h3>
+            <input type="text" id="newCatName" placeholder="Category Name">
+            <button class="btn btn-primary" onclick="addCategory()">Add Category</button>
+
+            <h3 style="color:var(--accent); margin-top:20px;">Add Menu Item</h3>
+            <select id="catDropdown"></select>
+            <input type="text" id="newItemName" placeholder="Item Name">
+            <input type="number" id="newItemPrice" placeholder="Price">
+            <button class="btn btn-primary" onclick="addMenuItem()">Add Item</button>
+
+            <h3 style="color:var(--accent); margin-top:20px;">Manage Menu</h3>
+            <div id="manageList"></div>
+            <button class="admin-scroll-top" onclick="document.getElementById('adminContainer').scrollTo(0,0)">↑</button>
+        </div>
+    </div>
+</div>
+
+<footer>© ASPIRE RESTAURANT</footer>
+
+<script>
+    let menuData = JSON.parse(localStorage.getItem('aspire_data')) || [
+        { name: "Main Dishes", items: [{name: "Rice", price: 200}, {name: "Ugali", price: 150}] }
+    ];
+    let pin = localStorage.getItem('aspire_pin') || "1234";
+
+    function save() {
+        localStorage.setItem('aspire_data', JSON.stringify(menuData));
+        localStorage.setItem('aspire_pin', pin);
+        render();
+    }
+
+    // Improved Back to Top Visibility Logic
+    window.addEventListener('scroll', function() {
+        const btn = document.getElementById("btnTop");
+        // Show after 150px of scrolling
+        if (window.pageYOffset > 150 || document.documentElement.scrollTop > 150) {
+            btn.style.display = "flex";
+        } else {
+            btn.style.display = "none";
+        }
+    });
+
+    function toggleAdminPanel(show) {
+        document.getElementById('adminOverlay').style.display = show ? 'flex' : 'none';
+        if(!show) handleLogout();
+    }
+
+    function handleLogin() {
+        if(document.getElementById('passInput').value === pin) {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashSection').style.display = 'block';
+            renderAdminDash();
+        } else { alert("Incorrect Password"); }
+    }
+
+    function handleLogout() {
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('dashSection').style.display = 'none';
+        document.getElementById('passInput').value = '';
+    }
+
+    function changePassword() {
+        let n = prompt("New Password?");
+        if(n) { pin = n; save(); alert("Password Updated!"); }
+    }
+
+    function addCategory() {
+        let n = document.getElementById('newCatName').value;
+        if(n) { menuData.push({name: n, items: []}); document.getElementById('newCatName').value=''; save(); renderAdminDash(); }
+    }
+
+    function addMenuItem() {
+        let catIdx = document.getElementById('catDropdown').value;
+        let name = document.getElementById('newItemName').value;
+        let price = document.getElementById('newItemPrice').value;
+        if(name && price) {
+            menuData[catIdx].items.push({name, price});
+            document.getElementById('newItemName').value='';
+            document.getElementById('newItemPrice').value='';
+            save(); renderAdminDash();
+        }
+    }
+
+    function deleteItem(cIdx, iIdx) {
+        if(confirm("Delete item?")) { menuData[cIdx].items.splice(iIdx, 1); save(); renderAdminDash(); }
+    }
+
+    function deleteCategory(cIdx) {
+        if(confirm("Delete entire category?")) { menuData.splice(cIdx, 1); save(); renderAdminDash(); }
+    }
+
+    function toggleCategory(index) {
+        const lists = document.querySelectorAll('.items-list');
+        lists.forEach((list, i) => {
+            if(i === index) {
+                list.classList.toggle('active');
+            } else {
+                list.classList.remove('active');
+            }
+        });
+    }
+
+    function render() {
+        const container = document.getElementById('menuDisplay');
+        container.innerHTML = menuData.map((cat, cIdx) => `
+            <div class="category-card" onclick="toggleCategory(${cIdx})">
+                <div class="category-title">
+                    <span>${cat.name}</span>
+                    <span>▾</span>
+                </div>
+                <div class="items-list" id="list-${cIdx}">
+                    ${cat.items.map(item => `
+                        <div class="menu-item">
+                            <span>${item.name}</span>
+                            <span>Ksh ${item.price}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderAdminDash() {
+        const dropdown = document.getElementById('catDropdown');
+        dropdown.innerHTML = menuData.map((cat, i) => `<option value="${i}">${cat.name}</option>`).join('');
+        const manage = document.getElementById('manageList');
+        manage.innerHTML = menuData.map((cat, cIdx) => `
+            <div style="margin-top:15px; border:1px solid #333; padding:10px; border-radius:10px;">
+                <div style="display:flex; justify-content:space-between; font-weight:bold; color:var(--accent)">
+                    ${cat.name} 
+                    <button onclick="deleteCategory(${cIdx})" style="color:#ff4444; background:none; border:none; cursor:pointer;">Delete</button>
+                </div>
+                ${cat.items.map((item, iIdx) => `
+                    <div class="edit-item-row">
+                        <span>${item.name} - ${item.price}</span>
+                        <button onclick="deleteItem(${cIdx}, ${iIdx})" style="color:#ff4444; background:none; border:none; cursor:pointer;">✖</button>
+                    </div>
+                `).join('')}
+            </div>
+        `).join('');
+    }
+
+    render();
+</script>
+</body>
+</html>
+
